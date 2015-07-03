@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		D80713821B411E1000545C00 /* test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D80713811B411E1000545C00 /* test.cpp */; };
 		D89A14F71B44CC5600345755 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D89A14F61B44CC5600345755 /* main.cpp */; };
-		D89EF84D1B4388740072D83B /* save_img_mat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D89EF84C1B4388740072D83B /* save_img_mat.cpp */; };
 		D8F24DEF1B40DFAB00D41BB0 /* and_template_original_imgs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D8F24DE61B40DFAB00D41BB0 /* and_template_original_imgs.cpp */; };
 		D8F24DF21B40DFAB00D41BB0 /* compute_direction_angles.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D8F24DE91B40DFAB00D41BB0 /* compute_direction_angles.cpp */; };
 		D8F24DF31B40DFAB00D41BB0 /* extract_max_area_contour.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D8F24DEA1B40DFAB00D41BB0 /* extract_max_area_contour.cpp */; };
@@ -82,7 +81,6 @@
 /* Begin PBXFileReference section */
 		D80713811B411E1000545C00 /* test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test.cpp; sourceTree = "<group>"; };
 		D89A14F61B44CC5600345755 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		D89EF84C1B4388740072D83B /* save_img_mat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = save_img_mat.cpp; sourceTree = "<group>"; };
 		D8F24DDB1B40DE5C00D41BB0 /* cluster_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = cluster_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8F24DE61B40DFAB00D41BB0 /* and_template_original_imgs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = and_template_original_imgs.cpp; sourceTree = "<group>"; };
 		D8F24DE91B40DFAB00D41BB0 /* compute_direction_angles.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = compute_direction_angles.cpp; sourceTree = "<group>"; };
@@ -229,7 +227,6 @@
 				D8F24DEC1B40DFAB00D41BB0 /* save_img.cpp */,
 				D8F24DED1B40DFAB00D41BB0 /* save.cpp */,
 				D80713811B411E1000545C00 /* test.cpp */,
-				D89EF84C1B4388740072D83B /* save_img_mat.cpp */,
 			);
 			path = cluster_test;
 			sourceTree = "<group>";
@@ -351,7 +348,6 @@
 				D80713821B411E1000545C00 /* test.cpp in Sources */,
 				D8F24DF31B40DFAB00D41BB0 /* extract_max_area_contour.cpp in Sources */,
 				D8F24DF51B40DFAB00D41BB0 /* save_img.cpp in Sources */,
-				D89EF84D1B4388740072D83B /* save_img_mat.cpp in Sources */,
 				D8F24DF61B40DFAB00D41BB0 /* save.cpp in Sources */,
 				D89A14F71B44CC5600345755 /* main.cpp in Sources */,
 				D8F24DF21B40DFAB00D41BB0 /* compute_direction_angles.cpp in Sources */,

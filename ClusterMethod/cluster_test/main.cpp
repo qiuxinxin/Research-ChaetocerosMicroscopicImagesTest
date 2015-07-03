@@ -16,7 +16,9 @@ extern IPL save_img(IPL,char *,string);
 int main(int argc, char* argv[])
 {
     IPL src1=cvLoadImage(argv[1],0);//将图像文件加载至内存，自动分配图像数据结构所需的内存，该函数执行完后将返回一个指针，0代表图像为灰度图像,1为RGB图像
+    IPL src2=cvLoadImage(argv[1],1);
     IPL src = cvCreateImage( cvSize( src1 -> width+2, src1 -> height+2 ), IPL_DEPTH_8U, src1->nChannels);//创造一个图像header并分配给图像数据（图像宽高，图像元素的比特数，这里为8，每像素的通道数），->可以看到图像所有的性质 argv为输入各参数的名称
+    IPL srcc = cvCreateImage( cvSize( src2 -> width+2, src2 -> height+2 ),IPL_DEPTH_8U, src2->nChannels);
     IPL image_x=cvCloneImage(src);
     IPL image_y=cvCloneImage(src);
     IPL image_z=cvCloneImage(src);
@@ -25,7 +27,7 @@ int main(int argc, char* argv[])
     IPL image_yz=cvCloneImage(src);
     
     int height=src->height, width=src->width;
-    //    printf("h=%d w=%d\n",height,width);
+    //        printf("h=%d w=%d\n",height,width);
     double **c1;
     double **c2;
     double **c3;
@@ -50,6 +52,7 @@ int main(int argc, char* argv[])
     
     
     cvCopyMakeBorder(src1, src, cvPoint(1,1), IPL_BORDER_CONSTANT);//复制图像并且制作边界，Bordertype=IPL_BORDER_CONSTANT时，有一个像素宽的黑色边界（为了后面计算原图像的边界点方便），指定（1，1）为原点坐标，拷贝图像，因此输出图像要对应扩大
+    cvCopyMakeBorder(src2, srcc, cvPoint(1,1), IPL_BORDER_CONSTANT);
     
     for(int i=0; i<width; i++)
     {
@@ -240,80 +243,90 @@ int main(int argc, char* argv[])
     delete []xymap;
     delete []xzmap;
     delete []yzmap;
-    
-//    Mat src3=cvarrToMat(src);
-//    Mat temp;
-//    src3.copyTo(temp);
-//    Mat image=temp.reshape(1,height*width);
-//    cout<<image<<endl;
-//    CvScalar ixy;
+    //
     int i,j;
-    
-//    Mat image(1,height*width,CV_32FC3);
-//    
-//    for (i=0;i<height;i++)
-//        for (j=0;j<width;j++)
-//        {
-//            ixy=cvGet2D(src, i, j);
-//            cvSet2D(&image, i+j+(width-1)*i, 1, ixy);
-//        }
-    
-    
+    //
     Mat imagex=cvarrToMat(image_x);//iplimage转mat
-//        cout<<imagex<<endl;
     Mat imagey=cvarrToMat(image_y);
     Mat imagez=cvarrToMat(image_z);
     Mat imagexz=cvarrToMat(image_xz);
     Mat imageyz=cvarrToMat(image_yz);
+    //            cout<<imageyz<<endl;
     Mat image1=cvarrToMat(src);
-    Mat image2=imread(argv[1]);
-//    cout<<image<<endl;
-//    Mat image=imread(argv[1]);
-    Mat tempx,tempy,tempz,tempxz,tempyz;//避免直接使用出现矩阵不连续的错误
-    imagex.copyTo(tempx);
-    imagey.copyTo(tempy);
-    imagez.copyTo(tempz);
-    imagexz.copyTo(tempxz);
-    imageyz.copyTo(tempyz);
-//
-    Mat imgx=tempx.reshape(1,height*width);//将图像像素排成一列
-//        cout<<imgx<<endl;
-    Mat imgy=tempy.reshape(1,height*width);
-    Mat imgz=tempz.reshape(1,height*width);
-    Mat imgxz=tempxz.reshape(1,height*width);
-    Mat imgyz=tempyz.reshape(1,height*width);
-//    int height=image.rows;
-//    int width=image.cols;
-//    cout<<height<<"\n"<<width<<endl;
-    Mat sample=Mat(height*width,4,CV_32FC3);//生成height*width行5列矩阵，注意采样点格式为32bit浮点数
+    Mat image2=cvarrToMat(srcc);
+    //    cout<<image2<<endl;
+    //    Mat tempx,tempy,tempz,tempxz,tempyz;//避免直接使用出现矩阵不连续的错误
+    //    imagex.copyTo(tempx);
+    //    imagey.copyTo(tempy);
+    //    imagez.copyTo(tempz);
+    //    imagexz.copyTo(tempxz);
+    //    imageyz.copyTo(tempyz);
+    ////
+    //    Mat imgx=tempx.reshape(1,height*width);//将图像像素排成一列
+    //        cout<<imgx<<endl;
+    //    Mat imgy=tempy.reshape(1,height*width);
+    ////    cout<<imgy<<endl;
+    //    Mat imgz=tempz.reshape(1,height*width);
+    //    Mat imgxz=tempxz.reshape(1,height*width);
+    //    Mat imgyz=tempyz.reshape(1,height*width);
+    //    int height=image2.rows;
+    //    int width=image2.cols;
+    //    cout<<height<<"\n"<<width<<endl;
+    Mat sample=Mat(height*width,8,CV_32FC1);//生成height*width行5列矩阵，注意采样点格式为32bit浮点数
     Mat labels1(height*width, 1, CV_32SC1);
     Mat img1(image1.size(), CV_8UC3);
     
-//    cout<<sample<<endl;
-    for(i=0; i < height*width; i++)
-    {
-//        sample.at<Vec3f>(i,0)=imgx.at<Vec3b>(i,1);//一行为一个样本（即某个像素点），每列为一个特征
-//                cout<<imgx.at<Vec3b>(1,1)<<"\n";
-//        sample.at<Vec3f>(i,1)=imgy.at<Vec3b>(i,1);
-//        sample.at<Vec3f>(i,2)=imgz.at<Vec3b>(i,1);
-//        sample.at<Vec3f>(i,3)=imgxz.at<Vec3b>(i,1);
-        sample.at<Vec3f>(i,0)=imgyz.at<Vec3b>(i,1);
-    }
     
-    uchar* p;
-    for(i=0; i < height-1; i++)
+    uchar*p1,*p2,*p3,*p4,*p5,*p;
+    for(i=0; i < height; i++)
     {
+        p1 = imagex.ptr<uchar>(i);
+        p2 = imagey.ptr<uchar>(i);
+        p3 = imagez.ptr<uchar>(i);
+        p4 = imagexz.ptr<uchar>(i);
+        p5 = imageyz.ptr<uchar>(i);
         p = image2.ptr<uchar>(i);
-        //        cout<<p<<endl;
-        for(j=0; j< width-1; j++)
+        //                    cout<<p<<endl;
+        for(j=0; j< width; j++)
         {
-            sample.at<Vec3f>(i*width+j,1)= float(p[j*3]);
-            sample.at<Vec3f>(i*width+j,2)= float(p[j*3+1]);
-            sample.at<Vec3f>(i*width+j,3)= float(p[j*3+2]);
-//            cout<<i*width+j<<float(p[j*3+2])<<endl;
+            sample.at<Vec3f>(i*width+j,0)[0]= float(p1[j]);
+            sample.at<Vec3f>(i*width+j,0)[1]= float(p2[j]);
+            sample.at<Vec3f>(i*width+j,0)[2]= float(p3[j]);
+            sample.at<Vec3f>(i*width+j,0)[3]= float(p4[j]);
+            sample.at<Vec3f>(i*width+j,0)[4]= float(p5[j]);
+            sample.at<Vec3f>(i*width+j,0)[5]= float(p[3*j]);
+            sample.at<Vec3f>(i*width+j,0)[6]= float(p[3*j+1]);
+            sample.at<Vec3f>(i*width+j,0)[7]= float(p[3*j+2]);
+            //                                cout<<float(p[3*j+2])<<endl;
+            //                cout<<sample.at<Vec3f>(i*width+j,0)[4]<<endl;
         }
     }
-
+    //    cout<<sample<<endl;
+    //    for(i=0; i < height*width; i++)
+    //    {
+    //        sample.at<Vec3f>(i,0)=imgx.at<Vec3b>(i,1);//一行为一个样本（即某个像素点），每列为一个特征
+    //        sample.at<Vec3f>(i,1)=imgy.at<Vec3b>(i,1);
+    //        sample.at<Vec3f>(i,2)=imgz.at<Vec3b>(i,1);
+    //        sample.at<Vec3f>(i,3)=imgxz.at<Vec3b>(i,1);
+    //        sample.at<Vec3f>(i,4)=imgyz.at<Vec3b>(i,1);
+    //    }
+    //    cout<<imgx.at<Vec3b>(0,0)<<"\n"<<imgy.at<Vec3b>(0,0)<<"\n"<<imgz.at<Vec3b>(0,0)<<"\n"<<imgxz.at<Vec3b>(0,0)<<"\n"<<imgyz.at<Vec3b>(0,0)<<endl;
+    //    cout<<imgx.at<Vec3b>(1,1)<<"\n"<<imgy.at<Vec3b>(1,1)<<"\n"<<imgz.at<Vec3b>(1,1)<<"\n"<<imgxz.at<Vec3b>(1,1)<<"\n"<<imgyz.at<Vec3b>(1,1)<<endl;
+    //    cout<<sample<<endl;
+    //    uchar* p;
+    //    for(i=0; i < height; i++)
+    //    {
+    //        p = image2.ptr<uchar>(i);
+    //        //        cout<<p<<endl;
+    //        for(j=0; j< width; j++)
+    //        {
+    //            sample.at<Vec3f>(i*width+j,0)= float(p[j*3]);
+    //            sample.at<Vec3f>(i*width+j,1)= float(p[j*3+1]);
+    //            sample.at<Vec3f>(i*width+j,2)= float(p[j*3+2]);
+    ////            cout<<i*width+j<<float(p[j*3+2])<<endl;
+    //        }
+    //    }
+    
     int cluster_num=2;
     Mat centers1(cluster_num, 1, sample.type());//用来存储聚类后的中心点
     kmeans(sample, cluster_num, labels1, TermCriteria( TermCriteria::COUNT+TermCriteria::EPS, 10, 1.0), 1,KMEANS_PP_CENTERS, centers1);//TermCriteria控制迭代算法的终止条件
@@ -323,7 +336,7 @@ int main(int argc, char* argv[])
         for( j = 0; j < image1.cols; j++ )
         {
             int index = labels1.at<int>(m,0);
-//             printf("in=%d\n",index);
+            //             printf("in=%d\n",index);
             m++;
             if( index == -1 )
                 img1.at<Vec3b>(i,j) = Vec3b(255,0,0);
@@ -334,25 +347,24 @@ int main(int argc, char* argv[])
             else
                 img1.at<Vec3b>(i,j) = Vec3b(0,0,0);
         }
-//    
+    
     string savingfile(argv[1]);
     string shortstring=savingfile.substr(savingfile.find_last_of("/")+1,savingfile.length()-savingfile.find_last_of("/"));//只提取图片名字，不带路径
     //    printf("str1=%s\n",shortstring1.c_str());
     shortstring.erase(shortstring.find_last_of("."));//去除文件扩展名
-    string add="_kmeans++4feature-rgb_yz.tif";
+    string add="_kmeans++8feature.tif";
     shortstring+=add;//加入新的标示及扩展名
     imwrite(shortstring,img1);
     
-//        namedWindow("K-means++");
-//        imshow("K-means++", img1);
-//        waitKey();
-//
-//    cvReleaseImage(&image_x);
-//    cvReleaseImage(&image_y);
-//    cvReleaseImage(&image_z);
-//    cvReleaseImage(&image_xz);
-//    cvReleaseImage(&image_yz);
+    //        namedWindow("K-means++");
+    //        imshow("K-means++", img1);
+    //        waitKey();
+    
+    cvReleaseImage(&image_x);
+    cvReleaseImage(&image_y);
+    cvReleaseImage(&image_z);
+    cvReleaseImage(&image_xz);
+    cvReleaseImage(&image_yz);
     
     return 0;
 }
-
