@@ -243,9 +243,9 @@ int main(int argc, char* argv[])
     delete []xymap;
     delete []xzmap;
     delete []yzmap;
-    //
+    
     int i,j;
-    //
+    
     Mat imagex=cvarrToMat(image_x);//iplimage转mat
     Mat imagey=cvarrToMat(image_y);
     Mat imagez=cvarrToMat(image_z);
@@ -254,86 +254,71 @@ int main(int argc, char* argv[])
     //            cout<<imageyz<<endl;
     Mat image1=cvarrToMat(src);
     Mat image2=cvarrToMat(srcc);
-    //    cout<<image2<<endl;
-    //    Mat tempx,tempy,tempz,tempxz,tempyz;//避免直接使用出现矩阵不连续的错误
-    //    imagex.copyTo(tempx);
-    //    imagey.copyTo(tempy);
-    //    imagez.copyTo(tempz);
-    //    imagexz.copyTo(tempxz);
-    //    imageyz.copyTo(tempyz);
-    ////
-    //    Mat imgx=tempx.reshape(1,height*width);//将图像像素排成一列
-    //        cout<<imgx<<endl;
-    //    Mat imgy=tempy.reshape(1,height*width);
-    ////    cout<<imgy<<endl;
-    //    Mat imgz=tempz.reshape(1,height*width);
-    //    Mat imgxz=tempxz.reshape(1,height*width);
-    //    Mat imgyz=tempyz.reshape(1,height*width);
-    //    int height=image2.rows;
-    //    int width=image2.cols;
-    //    cout<<height<<"\n"<<width<<endl;
-    Mat sample=Mat(height*width,8,CV_32FC1);//生成height*width行5列矩阵，注意采样点格式为32bit浮点数
-    Mat labels1(height*width, 1, CV_32SC1);
-    Mat img1(image1.size(), CV_8UC3);
+    Mat image3=cvarrToMat(src2);
+    
+    Mat sample=Mat((height-2)*(width-2),8,CV_32FC1);//生成height*width行5列矩阵，注意采样点格式为32bit浮点数
+    Mat labels1((height-2)*(width-2), 1, CV_32SC1);
+    Mat img1(image3.size(), CV_8UC3);
     
     
     uchar*p1,*p2,*p3,*p4,*p5,*p;
-    for(i=0; i < height; i++)
+    for(i=0; i < height-2; i++)
     {
-        p1 = imagex.ptr<uchar>(i);
-        p2 = imagey.ptr<uchar>(i);
-        p3 = imagez.ptr<uchar>(i);
-        p4 = imagexz.ptr<uchar>(i);
-        p5 = imageyz.ptr<uchar>(i);
-        p = image2.ptr<uchar>(i);
+        p1 = imagex.ptr<uchar>(i+1);
+        p2 = imagey.ptr<uchar>(i+1);
+        p3 = imagez.ptr<uchar>(i+1);
+        p4 = imagexz.ptr<uchar>(i+1);
+        p5 = imageyz.ptr<uchar>(i+1);
+        p = image2.ptr<uchar>(i+1);
         //                    cout<<p<<endl;
-        for(j=0; j< width; j++)
+        for(j=0; j< width-2; j++)
         {
-            sample.at<Vec3f>(i*width+j,0)[0]= float(p1[j]);
-            sample.at<Vec3f>(i*width+j,0)[1]= float(p2[j]);
-            sample.at<Vec3f>(i*width+j,0)[2]= float(p3[j]);
-            sample.at<Vec3f>(i*width+j,0)[3]= float(p4[j]);
-            sample.at<Vec3f>(i*width+j,0)[4]= float(p5[j]);
-            sample.at<Vec3f>(i*width+j,0)[5]= float(p[3*j]);
-            sample.at<Vec3f>(i*width+j,0)[6]= float(p[3*j+1]);
-            sample.at<Vec3f>(i*width+j,0)[7]= float(p[3*j+2]);
-            //                                cout<<float(p[3*j+2])<<endl;
-            //                cout<<sample.at<Vec3f>(i*width+j,0)[4]<<endl;
+            sample.at<Vec3f>(i*(width-2)+j,0)[0]= float(p[3*(j+1)]);
+            sample.at<Vec3f>(i*(width-2)+j,0)[1]= float(p[3*(j+1)+1]);
+            sample.at<Vec3f>(i*(width-2)+j,0)[2]= float(p[3*(j+1)+2]);
+            sample.at<Vec3f>(i*(width-2)+j,0)[3]= float(p1[j+1]);
+            sample.at<Vec3f>(i*(width-2)+j,0)[4]= float(p2[j+1]);
+            sample.at<Vec3f>(i*(width-2)+j,0)[5]= float(p3[j+1]);
+            
+            sample.at<Vec3f>(i*(width-2)+j,0)[6]= float(p4[j+1]);
+            sample.at<Vec3f>(i*(width-2)+j,0)[7]= float(p5[j+1]);
+            
+            //                                cout<<sample.at<Vec3f>(i*(width-2)+j,2)<<endl;
         }
     }
     //    cout<<sample<<endl;
-    //    for(i=0; i < height*width; i++)
-    //    {
-    //        sample.at<Vec3f>(i,0)=imgx.at<Vec3b>(i,1);//一行为一个样本（即某个像素点），每列为一个特征
-    //        sample.at<Vec3f>(i,1)=imgy.at<Vec3b>(i,1);
-    //        sample.at<Vec3f>(i,2)=imgz.at<Vec3b>(i,1);
-    //        sample.at<Vec3f>(i,3)=imgxz.at<Vec3b>(i,1);
-    //        sample.at<Vec3f>(i,4)=imgyz.at<Vec3b>(i,1);
-    //    }
-    //    cout<<imgx.at<Vec3b>(0,0)<<"\n"<<imgy.at<Vec3b>(0,0)<<"\n"<<imgz.at<Vec3b>(0,0)<<"\n"<<imgxz.at<Vec3b>(0,0)<<"\n"<<imgyz.at<Vec3b>(0,0)<<endl;
-    //    cout<<imgx.at<Vec3b>(1,1)<<"\n"<<imgy.at<Vec3b>(1,1)<<"\n"<<imgz.at<Vec3b>(1,1)<<"\n"<<imgxz.at<Vec3b>(1,1)<<"\n"<<imgyz.at<Vec3b>(1,1)<<endl;
-    //    cout<<sample<<endl;
-    //    uchar* p;
-    //    for(i=0; i < height; i++)
-    //    {
-    //        p = image2.ptr<uchar>(i);
-    //        //        cout<<p<<endl;
-    //        for(j=0; j< width; j++)
-    //        {
-    //            sample.at<Vec3f>(i*width+j,0)= float(p[j*3]);
-    //            sample.at<Vec3f>(i*width+j,1)= float(p[j*3+1]);
-    //            sample.at<Vec3f>(i*width+j,2)= float(p[j*3+2]);
-    ////            cout<<i*width+j<<float(p[j*3+2])<<endl;
-    //        }
-    //    }
+    
+    //    归一化
+    Mat samp1=Mat((height-2)*(width-2),8,CV_32FC1);
+    for (i=0;i<8;i++)
+    {
+        double min=1, max=1;
+        //    int id_min,id_max;
+        //    float samplecol=sample.at<Vec3f>()[0];
+        //    cout<<samplecol<<endl;
+        Mat samp=sample.colRange(i,i+1).clone();
+        //    cout<<samp.at<Vec3f>(3,0)[0]<<endl;
+        minMaxIdx(samp,&min,&max);
+        //    cout<<min<<"\n"<<max<<"\n"<<endl;
+        for (j=0;j<sample.rows;j++)
+        {
+            samp1.at<Vec3f>(j,0)[i]=(samp.at<Vec3f>(j,0)[0]-min)/(max-min);
+            //            cout<<(samp.at<Vec3f>(j,0)[0]-min)/(max-min)<<endl;
+            //            cout<<samp1.at<Vec3f>(j,0)[i]<<endl;
+        }
+    }
+    //   cout<<samp1<<endl;
+    
+    
+    
     
     int cluster_num=2;
     Mat centers1(cluster_num, 1, sample.type());//用来存储聚类后的中心点
-    kmeans(sample, cluster_num, labels1, TermCriteria( TermCriteria::COUNT+TermCriteria::EPS, 10, 1.0), 1,KMEANS_PP_CENTERS, centers1);//TermCriteria控制迭代算法的终止条件
+    kmeans(samp1, cluster_num, labels1, TermCriteria( TermCriteria::COUNT+TermCriteria::EPS, 10, 1.0), 1,KMEANS_PP_CENTERS, centers1);//TermCriteria控制迭代算法的终止条件
     
     int m=0;
-    for( i = 0; i < image1.rows; i++ )
-        for( j = 0; j < image1.cols; j++ )
+    for( i = 0; i < image3.rows; i++ )
+        for( j = 0; j < image3.cols; j++ )
         {
             int index = labels1.at<int>(m,0);
             //             printf("in=%d\n",index);
@@ -347,7 +332,7 @@ int main(int argc, char* argv[])
             else
                 img1.at<Vec3b>(i,j) = Vec3b(0,0,0);
         }
-    
+    //
     string savingfile(argv[1]);
     string shortstring=savingfile.substr(savingfile.find_last_of("/")+1,savingfile.length()-savingfile.find_last_of("/"));//只提取图片名字，不带路径
     //    printf("str1=%s\n",shortstring1.c_str());
