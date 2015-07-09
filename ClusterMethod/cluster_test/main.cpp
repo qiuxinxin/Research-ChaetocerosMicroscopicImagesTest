@@ -1,7 +1,7 @@
 #include <iostream>
 #include <opencv2/highgui.hpp>
-#include "opencv2/core.hpp"
-#include "opencv2/imgproc.hpp"
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 #include <string>
 
 
@@ -15,8 +15,8 @@ extern IPL save_img(IPL,char *,string);
 
 int main(int argc, char* argv[])
 {
-    IPL src1=cvLoadImage(argv[1],0);//将图像文件加载至内存，自动分配图像数据结构所需的内存，该函数执行完后将返回一个指针，0代表图像为灰度图像,1为RGB图像
-    IPL src2=cvLoadImage(argv[1],1);
+    IPL src1=cvLoadImage("/Users/qiuxinxin/temp/角毛藻显微图像/cluster/cluster_test/洛氏角毛藻40-1.tif",0);//将图像文件加载至内存，自动分配图像数据结构所需的内存，该函数执行完后将返回一个指针，0代表图像为灰度图像,1为RGB图像
+    IPL src2=cvLoadImage("/Users/qiuxinxin/temp/角毛藻显微图像/cluster/cluster_test/洛氏角毛藻40-1.tif",1);
     IPL src = cvCreateImage( cvSize( src1 -> width+2, src1 -> height+2 ), IPL_DEPTH_8U, src1->nChannels);//创造一个图像header并分配给图像数据（图像宽高，图像元素的比特数，这里为8，每像素的通道数），->可以看到图像所有的性质 argv为输入各参数的名称
     IPL srcc = cvCreateImage( cvSize( src2 -> width+2, src2 -> height+2 ),IPL_DEPTH_8U, src2->nChannels);
     IPL image_x=cvCloneImage(src);
@@ -251,16 +251,16 @@ int main(int argc, char* argv[])
     Mat imagez=cvarrToMat(image_z);
     Mat imagexz=cvarrToMat(image_xz);
     Mat imageyz=cvarrToMat(image_yz);
-    //            cout<<imageyz<<endl;
+    //cout<<imageyz<<endl;
     Mat image1=cvarrToMat(src);
     Mat image2=cvarrToMat(srcc);
     Mat image3=cvarrToMat(src2);
     
-    Mat sample=Mat((height-2)*(width-2),8,CV_32FC1);//生成height*width行5列矩阵，注意采样点格式为32bit浮点数
+    Mat sample=Mat((height-2)*(width-2),2,CV_32FC1);//生成height*width行5列矩阵，注意采样点格式为32bit浮点数
     Mat labels1((height-2)*(width-2), 1, CV_32SC1);
     Mat img1(image3.size(), CV_8UC3);
     
-    
+    cout<<sample<<endl;
     uchar*p1,*p2,*p3,*p4,*p5,*p;
     for(i=0; i < height-2; i++)
     {
@@ -270,47 +270,35 @@ int main(int argc, char* argv[])
         p4 = imagexz.ptr<uchar>(i+1);
         p5 = imageyz.ptr<uchar>(i+1);
         p = image2.ptr<uchar>(i+1);
-        //                    cout<<p<<endl;
+        // cout<<p<<endl;
         for(j=0; j< width-2; j++)
         {
-            sample.at<Vec3f>(i*(width-2)+j,0)[0]= float(p[3*(j+1)]);
-            sample.at<Vec3f>(i*(width-2)+j,0)[1]= float(p[3*(j+1)+1]);
-            sample.at<Vec3f>(i*(width-2)+j,0)[2]= float(p[3*(j+1)+2]);
-            sample.at<Vec3f>(i*(width-2)+j,0)[3]= float(p1[j+1]);
-            sample.at<Vec3f>(i*(width-2)+j,0)[4]= float(p2[j+1]);
-            sample.at<Vec3f>(i*(width-2)+j,0)[5]= float(p3[j+1]);
+            //            sample.at<float>(i*(width-2)+j,0)= float(p[3*(j+1)]);
+            //            sample.at<float>(i*(width-2)+j,1)= float(p[3*(j+1)+1]);
+            //            sample.at<float>(i*(width-2)+j,2)= float(p[3*(j+1)+2]);
+            //            sample.at<float>(i*(width-2)+j,0)= float(p1[j+1]);
+            //            sample.at<float>(i*(width-2)+j,1)= float(p2[j+1]);
+            //            sample.at<float>(i*(width-2)+j,2)= float(p3[j+1]);
+            //
+            sample.at<float>(i*(width-2)+j,0)= float(p4[j+1]);
+            sample.at<float>(i*(width-2)+j,1)= float(p5[j+1]);
             
-            sample.at<Vec3f>(i*(width-2)+j,0)[6]= float(p4[j+1]);
-            sample.at<Vec3f>(i*(width-2)+j,0)[7]= float(p5[j+1]);
-            
-            //                                cout<<sample.at<Vec3f>(i*(width-2)+j,2)<<endl;
+            //            cout<<sample.at<float>(i*(width-2)+j,0)<<endl;
         }
     }
-    //    cout<<sample<<endl;
     
-    //    归一化
-    Mat samp1=Mat((height-2)*(width-2),8,CV_32FC1);
-    for (i=0;i<8;i++)
+    //归一化
+    Mat samp1=Mat((height-2)*(width-2),2,CV_32FC1);
+    for (i=0;i<2;i++)
     {
         double min=1, max=1;
-        //    int id_min,id_max;
-        //    float samplecol=sample.at<Vec3f>()[0];
-        //    cout<<samplecol<<endl;
-        Mat samp=sample.colRange(i,i+1).clone();
-        //    cout<<samp.at<Vec3f>(3,0)[0]<<endl;
+        Mat samp=sample.colRange(i,i+1).clone();//提取sample的每一列特征
         minMaxIdx(samp,&min,&max);
-        //    cout<<min<<"\n"<<max<<"\n"<<endl;
         for (j=0;j<sample.rows;j++)
         {
-            samp1.at<Vec3f>(j,0)[i]=(samp.at<Vec3f>(j,0)[0]-min)/(max-min);
-            //            cout<<(samp.at<Vec3f>(j,0)[0]-min)/(max-min)<<endl;
-            //            cout<<samp1.at<Vec3f>(j,0)[i]<<endl;
+            samp1.at<float>(j,i)=(samp.at<float>(j,i)-min)/(max-min);
         }
     }
-    //   cout<<samp1<<endl;
-    
-    
-    
     
     int cluster_num=2;
     Mat centers1(cluster_num, 1, sample.type());//用来存储聚类后的中心点
@@ -321,7 +309,7 @@ int main(int argc, char* argv[])
         for( j = 0; j < image3.cols; j++ )
         {
             int index = labels1.at<int>(m,0);
-            //             printf("in=%d\n",index);
+            //printf("in=%d\n",index);
             m++;
             if( index == -1 )
                 img1.at<Vec3b>(i,j) = Vec3b(255,0,0);
@@ -332,18 +320,16 @@ int main(int argc, char* argv[])
             else
                 img1.at<Vec3b>(i,j) = Vec3b(0,0,0);
         }
-    //
     string savingfile(argv[1]);
     string shortstring=savingfile.substr(savingfile.find_last_of("/")+1,savingfile.length()-savingfile.find_last_of("/"));//只提取图片名字，不带路径
-    //    printf("str1=%s\n",shortstring1.c_str());
     shortstring.erase(shortstring.find_last_of("."));//去除文件扩展名
-    string add="_kmeans++8feature.tif";
+    string add="_kmeans++xz_yz.tif";
     shortstring+=add;//加入新的标示及扩展名
     imwrite(shortstring,img1);
     
-    //        namedWindow("K-means++");
-    //        imshow("K-means++", img1);
-    //        waitKey();
+    //            namedWindow("K-means++");
+    //            imshow("K-means++", img1);
+    //            waitKey();
     
     cvReleaseImage(&image_x);
     cvReleaseImage(&image_y);
