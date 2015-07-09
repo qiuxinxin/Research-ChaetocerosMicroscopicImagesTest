@@ -43,7 +43,7 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
-      useCustomWorkingDirectory = "YES"
+      useCustomWorkingDirectory = "NO"
       customWorkingDirectory = "/Users/qiuxinxin/temp/&#x89d2;&#x6bdb;&#x85fb;&#x663e;&#x5fae;&#x56fe;&#x50cf;/cluster/cluster_test"
       buildConfiguration = "Debug"
       ignoresPersistentStateOnLaunch = "NO"

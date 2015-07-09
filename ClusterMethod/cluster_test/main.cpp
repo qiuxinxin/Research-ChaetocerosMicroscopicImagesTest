@@ -15,8 +15,8 @@ extern IPL save_img(IPL,char *,string);
 
 int main(int argc, char* argv[])
 {
-    IPL src1=cvLoadImage("/Users/qiuxinxin/temp/角毛藻显微图像/cluster/cluster_test/洛氏角毛藻40-1.tif",0);//将图像文件加载至内存，自动分配图像数据结构所需的内存，该函数执行完后将返回一个指针，0代表图像为灰度图像,1为RGB图像
-    IPL src2=cvLoadImage("/Users/qiuxinxin/temp/角毛藻显微图像/cluster/cluster_test/洛氏角毛藻40-1.tif",1);
+    IPL src1=cvLoadImage(argv[1],0);//将图像文件加载至内存，自动分配图像数据结构所需的内存，该函数执行完后将返回一个指针，0代表图像为灰度图像,1为RGB图像
+    IPL src2=cvLoadImage(argv[1],1);
     IPL src = cvCreateImage( cvSize( src1 -> width+2, src1 -> height+2 ), IPL_DEPTH_8U, src1->nChannels);//创造一个图像header并分配给图像数据（图像宽高，图像元素的比特数，这里为8，每像素的通道数），->可以看到图像所有的性质 argv为输入各参数的名称
     IPL srcc = cvCreateImage( cvSize( src2 -> width+2, src2 -> height+2 ),IPL_DEPTH_8U, src2->nChannels);
     IPL image_x=cvCloneImage(src);
