@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D87F59531B52852800B1433F /* svm_maps_resize.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D87F59521B52852800B1433F /* svm_maps_resize.cpp */; };
 		D8934F641B4EBE3800D0B53D /* libopencv_calib3d.3.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D8934F341B4EBE3800D0B53D /* libopencv_calib3d.3.0.0.dylib */; };
 		D8934F651B4EBE3800D0B53D /* libopencv_calib3d.3.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D8934F351B4EBE3800D0B53D /* libopencv_calib3d.3.0.0.dylib */; };
 		D8934F661B4EBE3800D0B53D /* libopencv_calib3d.3.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D8934F361B4EBE3800D0B53D /* libopencv_calib3d.3.0.0.dylib */; };
@@ -73,6 +74,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D87F59521B52852800B1433F /* svm_maps_resize.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = svm_maps_resize.cpp; sourceTree = "<group>"; };
 		D8934F2A1B4EBDF900D0B53D /* svm_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = svm_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8934F341B4EBE3800D0B53D /* libopencv_calib3d.3.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_calib3d.3.0.0.dylib; path = /usr/local/lib/libopencv_calib3d.3.0.0.dylib; sourceTree = "<absolute>"; };
 		D8934F351B4EBE3800D0B53D /* libopencv_calib3d.3.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_calib3d.3.0.0.dylib; path = /usr/local/lib/libopencv_calib3d.3.0.0.dylib; sourceTree = "<absolute>"; };
@@ -209,6 +211,7 @@
 				D8934F951B4EBEA100D0B53D /* compute_direction_angles.cpp */,
 				D8934F961B4EBEA100D0B53D /* save_img.cpp */,
 				D8934F971B4EBEA100D0B53D /* svmtest.cpp */,
+				D87F59521B52852800B1433F /* svm_maps_resize.cpp */,
 			);
 			path = svm_test;
 			sourceTree = "<group>";
@@ -327,6 +330,7 @@
 				D8934F991B4EBEA100D0B53D /* save_img.cpp in Sources */,
 				D8934F9A1B4EBEA100D0B53D /* svmtest.cpp in Sources */,
 				D8934F981B4EBEA100D0B53D /* compute_direction_angles.cpp in Sources */,
+				D87F59531B52852800B1433F /* svm_maps_resize.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -447,6 +451,7 @@
 				D8934F331B4EBDF900D0B53D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
