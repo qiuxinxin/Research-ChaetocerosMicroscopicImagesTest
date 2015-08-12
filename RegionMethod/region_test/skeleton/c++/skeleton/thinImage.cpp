@@ -182,66 +182,80 @@ int main(int argc, char*argv[])
     //将原图像转换为二值图像
     cvThreshold(pSrc,pTemp,128,1,CV_THRESH_BINARY);
     
-//    IplConvKernel *element=0;
-//    element=cvCreateStructuringElementEx(3,3,0,0,CV_SHAPE_ELLIPSE);
-//    IplImage *dilate1=cvCloneImage(pTemp);
-//    cvDilate(pTemp, dilate1,element,3);
-//    IplImage *close1=cvCloneImage(pTemp);
-//    IplImage *temp=cvCloneImage(pTemp);
-//    cvMorphologyEx(pTemp,close1,temp,element,MORPH_CLOSE,5);
-    CvMemStorage * storage = cvCreateMemStorage(0);//为0时内存块默认大小为64k
-    CvSeq* contour = 0;
-    cvFindContours(pTemp, storage, &contour,sizeof(CvContour),
-                   CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
-    cvDrawContours(pTemp, contour,cvScalarAll(255), cvScalarAll(255),-2,-1, 8, cvPoint(0,0));
+    IplConvKernel *element=0;
+    element=cvCreateStructuringElementEx(3,3,0,0,CV_SHAPE_ELLIPSE);
+    //    IplImage *dilate1=cvCloneImage(pTemp);
+    //    cvDilate(pTemp, dilate1,element,3);
+    IplImage *close1=cvCloneImage(pTemp);
+    IplImage *temp=cvCloneImage(pTemp);
+    cvMorphologyEx(pTemp,close1,temp,element,MORPH_CLOSE,2);
+    //    CvMemStorage * storage = cvCreateMemStorage(0);//为0时内存块默认大小为64k
+    //    CvSeq* contour = 0;
+    //    cvFindContours(pTemp, storage, &contour,sizeof(CvContour),
+    //                   CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
+    //    cvDrawContours(pTemp, contour,cvScalarAll(255), cvScalarAll(255),-2,-1, 8, cvPoint(0,0));
+    //    cvReleaseMemStorage(&storage);
     
-    cvReleaseMemStorage(&storage);
     IplImage *blur1=cvCloneImage(pTemp);
-    cvSmooth(pTemp,blur1,CV_BLUR,15,15);
-//    for (int i=0; i<close1->height; ++i)
-//    {
-//        for (int j=0; j<close1->width; ++j)
-//        {
-////            printf("s=%d\n",CV_IMAGE_ELEM(close1,uchar,i,j));
-//            if (CV_IMAGE_ELEM(close1,uchar,i,j)==1){
-//                CV_IMAGE_ELEM(close1,uchar,i,j)=255;
-//            }
-//        }
-//    }
-//    for (int i=0; i<blur1->height; ++i)
-//    {
-//        for (int j=0; j<blur1->width; ++j)
-//        {
-//            if (CV_IMAGE_ELEM(blur1,uchar,i,j)==1){
-//                CV_IMAGE_ELEM(blur1,uchar,i,j)=255;
-//            }
-//        }
-//    }
-    namedWindow("blur1",CV_WINDOW_AUTOSIZE);
-    cvShowImage("blur1",pTemp );
-    waitKey(0);
-////    string add1="-ske.tif";
-////    save_img2(blur1,argv[1],add1);
-//    cvSaveImage("/Users/qiuxinxin/temp/角毛藻显微图像/Test/RegionMethod/skeleton/c++/close51.tif", blur1);//图像细化
-    thinImage(blur1,pDst);
+    cvSmooth(close1,blur1,CV_BLUR,5,5);
+    IplImage *erosion1=cvCloneImage(pTemp);
+    
+    string add1="-ero.tif";
+    save_img2(erosion1,argv[1],add1);
+    cvErode(blur1,erosion1,element,2);
+    //    for (int i=0; i<close1->height; ++i)
+    //    {
+    //        for (int j=0; j<close1->width; ++j)
+    //        {
+    ////            printf("s=%d\n",CV_IMAGE_ELEM(close1,uchar,i,j));
+    //            if (CV_IMAGE_ELEM(close1,uchar,i,j)==1){
+    //                CV_IMAGE_ELEM(close1,uchar,i,j)=255;
+    //            }
+    //        }
+    //    }
+    //    for (int i=0; i<blur1->height; ++i)
+    //    {
+    //        for (int j=0; j<blur1->width; ++j)
+    //        {
+    //            if (CV_IMAGE_ELEM(blur1,uchar,i,j)==1){
+    //                CV_IMAGE_ELEM(blur1,uchar,i,j)=255;
+    //            }
+    //        }
+    //    }
+    //    for (int i=0; i<erosion1->height; ++i)
+    //    {
+    //        for (int j=0; j<erosion1->width; ++j)
+    //        {
+    //            if (CV_IMAGE_ELEM(erosion1,uchar,i,j)==1){
+    //                CV_IMAGE_ELEM(erosion1,uchar,i,j)=255;
+    //            }
+    //        }
+    //    }
+    //    namedWindow("blur1",CV_WINDOW_AUTOSIZE);
+    //    cvShowImage("blur1",erosion1);
+    //    waitKey(0);
+    ////    string add1="-ske.tif";
+    ////    save_img2(blur1,argv[1],add1);
+    //    cvSaveImage("/Users/qiuxinxin/temp/角毛藻显微图像/Test/RegionMethod/skeleton/c++/close51.tif", blur1);//图像细化
+    thinImage(erosion1,pDst);
     
     for (int i=0; i<pDst->height; ++i)
     {
         for (int j=0; j<pDst->width; ++j)
         {
             if(CV_IMAGE_ELEM(pDst,uchar,i,j)==1)
-                CV_IMAGE_ELEM(pDst,uchar,i,j)= 255;
+                CV_IMAGE_ELEM(pDst,uchar,i,j)=255;
         }
     }
     
     string add="-ske.tif";
     save_img2(pDst,argv[1],add);
-//    namedWindow("src",CV_WINDOW_AUTOSIZE);
-////    namedWindow("dil",CV_WINDOW_AUTOSIZE);
-//    namedWindow("dst",CV_WINDOW_AUTOSIZE);
-//    cvShowImage("src",pSrc);
-////    cvShowImage("dil",pTemp);
-//    cvShowImage("dst",pDst);
-//    waitKey(0);
-//   cvSaveImage("/Users/qiuxinxin/temp/角毛藻显微图像/Test/RegionMethod/skeleton/c++/res.tif", pDst);//图像细化
+    //    namedWindow("src",CV_WINDOW_AUTOSIZE);
+    ////    namedWindow("dil",CV_WINDOW_AUTOSIZE);
+    //    namedWindow("dst",CV_WINDOW_AUTOSIZE);
+    //    cvShowImage("src",pSrc);
+    ////    cvShowImage("dil",pTemp);
+    //    cvShowImage("dst",pDst);
+    //    waitKey(0);
+    //   cvSaveImage("/Users/qiuxinxin/temp/角毛藻显微图像/Test/RegionMethod/skeleton/c++/res.tif", pDst);//图像细化
 }

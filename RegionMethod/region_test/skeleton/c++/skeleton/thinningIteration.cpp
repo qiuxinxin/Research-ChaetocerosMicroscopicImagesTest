@@ -90,11 +90,16 @@ int main(int argc, char * argv[])
     Mat bw;
     cvtColor(src, bw, CV_BGR2GRAY);
     threshold(bw, bw, 10, 255, CV_THRESH_BINARY);
-    Mat dilate1;
+    Mat close1;
     Mat element = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));// MORPH_RECT,MORPH_ELLIPSE,MORPH_CROSS
-    dilate(bw, dilate1, element);
-
-    thinning(dilate1);
+    //    dilate(bw, dilate1, element);
+    morphologyEx(bw, close1, MORPH_CLOSE, element,Point(0,0),3);
+    Mat blur1;
+    blur(close1, blur1, Size(3, 3));
+    Mat erode1;
+    erode(blur1, erode1, element);
+    
+    thinning(erode1);
     
     string add="-ske.tif";
     save_img(dilate1,argv[1],add);
