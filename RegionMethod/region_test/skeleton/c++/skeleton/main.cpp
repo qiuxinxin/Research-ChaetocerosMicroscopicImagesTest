@@ -16,16 +16,19 @@ using namespace cv;
 using namespace std;
 
 extern Mat morph_ske(Mat);
-extern Mat thinningGuoHall(Mat);
+extern Mat* save_img(Mat,char *,string);
 
-int main(int argc, const char * argv[])
+int main(int argc, char *argv[])
 {
-
-    Mat img=imread("/Users/qiuxinxin/temp/角毛藻显微图像/Test/RegionMethod/三步对比/Results-filter5/北方角毛藻/北方角毛藻_环面观_南海_00000000_115拖网_040_00_resize_svm-5maps-filter.tif",0);
-//   Mat skel=morph_ske(img);
-    Mat skel=thinningGuoHall(img);
+    Mat img=imread(argv[1],0);
+    //    Mat img=imread("/Users/qiuxinxin/temp/角毛藻显微图像/Test/RegionMethod/三步对比/Results-filter5/北方角毛藻/北方角毛藻_环面观_南海_00000000_115拖网_040_00_resize_svm-5maps-filter.tif",0);
+    Mat skel=morph_ske(img);
+    //    imshow("skel",skel);
     
-    imshow("Skeleton", skel);
-    waitKey(0);
+    string add="-ske.tif";
+    save_img(skel,argv[1],add);
+    
+    //    imshow("Skeleton", skel);
+    //    waitKey(0);
     return 0;
 }
