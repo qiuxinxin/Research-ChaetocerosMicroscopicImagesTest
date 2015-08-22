@@ -1,4 +1,3 @@
-
 #include "slic.h"
 #include <cstdlib>
 #include <cstdio>
@@ -9,9 +8,11 @@
 #include <opencv2/highgui.hpp>
 
 using namespace std;
+using namespace cv::ml;
 
 extern Mat* save_img(Mat,char *,string);
 
+//********计算x、y、z方向的方向角************//
 void compute_direction_angles(double p1,double p2,double p3,double p4,double * w_1,double * w_2,double * w_3,double * dis)
 {
     const  double  PI=3.1415926;
@@ -64,7 +65,7 @@ void compute_direction_angles(double p1,double p2,double p3,double p4,double * w
     *w_2=w_22;
     *w_3=w_32;
 }
-////////
+//************计算5个map**********//
 void gsdam(IplImage* image1, Mat image2, double **xmap,double **ymap,double **zmap, double **xzmap, double **yzmap)
 {
     IplImage* image_border = cvCreateImage( cvSize( image1 -> width+2, image1 -> height+2 ), IPL_DEPTH_8U, image1->nChannels);
@@ -74,22 +75,11 @@ void gsdam(IplImage* image1, Mat image2, double **xmap,double **ymap,double **zm
     double **c2;
     double **c3;
     double **c4;
-//    double **xmap;
-//    double **ymap;
-//    double **zmap;
-//    double **xzmap;
-//    double **yzmap;
     
     c1 = new double*[width];
     c2 = new double*[width];
     c3 = new double*[width];
     c4 = new double*[width];
-//    xmap=new double*[width];
-//    ymap=new double*[width];
-//    zmap=new double*[width];
-//    xzmap=new double*[width];
-//    yzmap=new double*[width];
-    
     
     cvCopyMakeBorder(image1, image_border, cvPoint(1,1),IPL_BORDER_CONSTANT);
     
@@ -99,11 +89,6 @@ void gsdam(IplImage* image1, Mat image2, double **xmap,double **ymap,double **zm
         c2[i] = new double[height];
         c3[i] = new double[height];
         c4[i] = new double[height];
-//        xmap[i]=new double[height];
-//        ymap[i]=new double[height];
-//        zmap[i]=new double[height];
-//        xzmap[i]=new double[height];
-//        yzmap[i]=new double[height];
     }
     
     int x,y;
@@ -228,39 +213,187 @@ void gsdam(IplImage* image1, Mat image2, double **xmap,double **ymap,double **zm
         }
     }
 }
+//*********svm训练与预测**********//
+void svm(Mat img_seg,double **xmap,double **ymap,double **zmap,double **xzmap,double **yzmap,Mat img_new1,double maxid)
+{
+    int i,j,m;
+    int k=0;
+    Mat trainingData1(0,1,CV_32FC1);//正样本
+    Mat trainingDataMat1;
+    for( i = 0; i < img_seg.rows; i++)
+    {
+        for (int j=0; j<img_seg.cols; j++)
+        {
+            if (img_seg.at<uchar>(i, j)==255)
+            {
+                trainingData1.push_back(float(xmap[j+1][i+1]));
+                trainingData1.push_back(float(ymap[j+1][i+1]));
+                trainingData1.push_back(float(zmap[j+1][i+1]));
+                trainingData1.push_back(float(xzmap[j+1][i+1]));
+                trainingData1.push_back(float(yzmap[j+1][i+1]));
+                k=k+1;
+            }
+        }
+    }
+    trainingDataMat1=trainingData1.reshape(0,k);
+    cout<<trainingDataMat1.size()<<endl;
+    
+    int N=sqrt(k*0.8/4);
+    int M=N*N*4;
+    Mat trainingData2(0,1,CV_32FC1);//负样本，取图像4个角像素
+    Mat trainingDataMat2;
+    int ai[4]={0,0,img_seg.rows-N,img_seg.rows-N},aj[4]={0,img_seg.cols-N,0,img_seg.cols-N};
+    int bi[4]={N,N,img_seg.rows,img_seg.rows},bj[4]={N,img_seg.cols,N,img_seg.cols};
+    
+    for (m=0; m<4;m++)
+    {
+        for( i = ai[m]; i < bi[m]; i++)//原图image2比分割后图像小2个像素
+        {
+            for ( j = aj[m]; j < bj[m]; j++)
+            {
+                trainingData2.push_back(float(xmap[j+1][i+1]));
+                trainingData2.push_back(float(ymap[j+1][i+1]));
+                trainingData2.push_back(float(zmap[j+1][i+1]));
+                trainingData2.push_back(float(xzmap[j+1][i+1]));
+                trainingData2.push_back(float(yzmap[j+1][i+1]));
+            }
+        }
+    }
+    trainingDataMat2=trainingData2.reshape(0,M);
+    cout<<trainingDataMat2.size()<<endl;
+    //    cout<<trainingDataMat2<<endl;
+    
+    for (i=0;i<M;i++)//正负样本合并
+    {
+        trainingDataMat1.push_back(trainingDataMat2.row(i));
+    }
+    cout<<trainingDataMat1.size()<<endl;
+    
+    int labels[k+M];//设置标记数组
+    int val1=1,val2=-1;
+    for (i=0;i<k;i++)
+    {
+        labels[i]=val1;
+    }
+    for (i=k;i<k+M;i++)
+    {
+        labels[i]=val2;
+    }
+    Mat labelsMat(k+M, 1, CV_32SC1, labels);
+    cout<<labelsMat.size()<<endl;
+    
+    //设置SVM参数
+    Ptr<SVM> svm = SVM::create();
+    svm->setC(0.1);
+    svm->setType(SVM::C_SVC);
+    svm->setKernel(SVM::LINEAR);
+    svm->setTermCriteria(TermCriteria(TermCriteria::MAX_ITER, (int)1e7, 1e-6));
+    
+    //训练svm
+    svm->train(trainingDataMat1,ROW_SAMPLE,labelsMat);
+    
+    int x,y;
+    Mat id;//记录像素点是否已被访问过
+    img_new1.copyTo(id);
+    Mat predictData1(0,1,CV_32FC1);//预测数据
+    Mat predictDataMat1;
+    for (int m=0; m<maxid+1; m++)
+    {
+        Mat average_xmap(0,1,CV_32FC1),average_ymap(0,1,CV_32FC1),average_zmap(0,1,CV_32FC1),average_xzmap(0,1,CV_32FC1),average_yzmap(0,1,CV_32FC1);
+        Scalar xmap_mean_value,ymap_mean_value,zmap_mean_value,xzmap_mean_value,yzmap_mean_value;
+        for(y=0; y<img_new1.rows; y++)
+        {
+            for(x=0; x<img_new1.cols; x++)
+            {
+                if (id.at<uchar>(y,x)!=maxid+2 && img_new1.at<uchar>(y,x)==m)
+                {
+                    average_xmap.push_back(float(xmap[x+1][y+1]));
+                    average_ymap.push_back(float(ymap[x+1][y+1]));
+                    average_zmap.push_back(float(zmap[x+1][y+1]));
+                    average_xzmap.push_back(float(xzmap[x+1][y+1]));
+                    average_yzmap.push_back(float(yzmap[x+1][y+1]));
+                    id.at<uchar>(y,x)=maxid+2;//遍历后将此点的id改为maxid+2,下次不再遍历到
+                }
+            }
+        }
+        xmap_mean_value=mean(average_xmap);
+        ymap_mean_value=mean(average_ymap);
+        zmap_mean_value=mean(average_zmap);
+        xzmap_mean_value=mean(average_xzmap);
+        yzmap_mean_value=mean(average_yzmap);
+        //        cout<<xmap_mean_value<<" "<<ymap_mean_value<<" "<<zmap_mean_value<<" "<<xzmap_mean_value<<" "<<yzmap_mean_value<<endl;
+        predictData1.push_back(float(xmap_mean_value.val[0]));
+        predictData1.push_back(float(ymap_mean_value.val[0]));
+        predictData1.push_back(float(zmap_mean_value.val[0]));
+        predictData1.push_back(float(xzmap_mean_value.val[0]));
+        predictData1.push_back(float(yzmap_mean_value.val[0]));
+    }
+    predictDataMat1=predictData1.reshape(0,maxid+1);//变为maxid+1行5列的矩阵
+    //        cout<<predictDataMat1<<endl;
+    Mat response;
+    svm->predict(predictDataMat1,response);
+    cout<<response<<endl;
+    Mat id1;
+    img_new1.copyTo(id1);
+    uchar white(255), black(0);//预测，每个区域统一标记
+    for (m=0; m<maxid; m++)
+    {
+        for (y=0;y<img_new1.rows;y++)
+        {
+            for (x=0;x<img_new1.cols;x++)
+            {
+                if(img_new1.at<uchar>(y,x)==m)
+                {
+                    if (id1.at<uchar>(y,x)!=maxid+2 && response.at<float>(m)==1){
+                        img_new1.at<uchar>(y,x)= white;
+                    }
+                    else if (id1.at<uchar>(y,x)!=maxid+2 && response.at<float>(m)==-1){
+                        img_new1.at<uchar>(y,x)= black;
+                    }
+                    id1.at<uchar>(y,x)=maxid+2;
+                }
+            }
+        }
+    }
+    imshow("1",img_new1);
+    imwrite("/Users/qiuxinxin/temp/角毛藻显微图像/Test/SvmSlicMethod/svm_slic_test/3.png",img_new1);
+}
+
 
 int main(int argc, char** argv)
 {
-
-	cv::Mat img, result;
-	
-    img = imread("/Users/qiuxinxin/Downloads/SLIC-superpixel-master/bird_color.jpg");
-//	img = imread(argv[1]);
-//	int numSuperpixel = atoi(argv[2]);
-    int numSuperpixel = atoi("200");
-	SLIC slic;
-	slic.GenerateSuperpixels(img, numSuperpixel);
+    //********slic得到每个区域的标记*********//
+    cv::Mat img, result;
+    img = imread("/Users/qiuxinxin/temp/角毛藻显微图像/Test/分割影响svm结果实验/dataset_resize/丹麦角毛藻/丹麦角毛藻_壳面观_青岛沿海_20041210_00_040_00_resize.tif");
+    //	img = imread(argv[1]);
+    //	int numSuperpixel = atoi(argv[2]);
+    int numSuperpixel = atoi("200");//设置superpixel的个数
+    SLIC slic;
+    slic.GenerateSuperpixels(img, numSuperpixel);
+    if (img.channels() == 3)
+        result = slic.GetImgWithContours(cv::Scalar(0, 0, 255));
+    else
+        result = slic.GetImgWithContours(cv::Scalar(128));
+    imwrite("/Users/qiuxinxin/temp/角毛藻显微图像/Test/SvmSlicMethod/svm_slic_test/31.png",result);
     int* label;
     int sz=img.rows*img.cols;
-    label=slic.GetLabel();
-    Mat img_new(Size(img.cols*img.rows,1),CV_8UC1);
-    for (int k=0;k<sz;k++)
+    label=slic.GetLabel();//得到每个区域的像素标记情况
+    
+    Mat img_new(Size(sz,1),CV_8UC1);
+    for (int k1=0;k1<sz;k1++)
     {
-        img_new.at<uchar>(k)=label[k];
-//        cout<<label[k]<<endl;
-        
+        img_new.at<uchar>(k1)=label[k1];
+        //        cout<<label[k1]<<endl;
     }
-//    imshow("img",img_new);
-//    cout<<img_new<<endl;
     double minid,maxid;
-    minMaxLoc(img_new, &minid, &maxid);
-//    cout<<maxid<<endl;
-
+    minMaxLoc(img_new, &minid, &maxid);//得出标记最大的号，即得
+    Mat img_new1=img_new.reshape(0,img.rows);//变成与原始图像一般大小
+    cout<<img_new1.size()<<endl;
     //*************gsdam得出5个maps*************//
-    IplImage* image1=cvLoadImage("/Users/qiuxinxin/Downloads/SLIC-superpixel-master/bird_color.jpg",0);
+    IplImage* image1=cvLoadImage("/Users/qiuxinxin/temp/角毛藻显微图像/Test/分割影响svm结果实验/dataset_resize/丹麦角毛藻/丹麦角毛藻_壳面观_青岛沿海_20041210_00_040_00_resize.tif",0);
     IplImage* image_border = cvCreateImage( cvSize( image1 -> width+2, image1 -> height+2 ), IPL_DEPTH_8U, image1->nChannels);
     int height=image_border->height, width=image_border->width;
-        double **xmap,**ymap,**zmap,**xzmap,**yzmap;
+    double **xmap,**ymap,**zmap,**xzmap,**yzmap;
     xmap=new double*[width];
     ymap=new double*[width];
     zmap=new double*[width];
@@ -274,37 +407,41 @@ int main(int argc, char** argv)
         xzmap[i]=new double[height];
         yzmap[i]=new double[height];
     }
-
+    
     gsdam(image1,img,xmap,ymap,zmap,xzmap,yzmap);
     
-//    for(int y=0; y<height-1; y++)
-//    {
-//        for(int x=0; x<width-1; x++)
-//        {
-//            cout<<xmap[x][y]<<endl;
-//        }
-//    }
- //****************************//
-    int x,y;
-    Mat id,diff;
-    img_new.copyTo(id);
-    for (int m=0; m<maxid+1; m++)
+    //    for(int y=0; y<height-1; y++)
+    //    {
+    //        for(int x=0; x<width-1; x++)
+    //        {
+    //            cout<<xmap[x][y]<<endl;
+    //        }
+    //    }
+    
+    //**********svm训练与预测************//
+    Mat img_seg=imread("/Users/qiuxinxin/temp/角毛藻显微图像/Test/SvmSlicMethod/preprocess/xz_yz-maps-filter/丹麦角毛藻/丹麦角毛藻_壳面观_青岛沿海_20041210_00_040_00_xz_yz-filter.tif",0);//resize后的分割图像
+    //    cout<<img_seg<<endl;
+    //    imshow("3",img_seg);
+    svm(img_seg,xmap,ymap,zmap,xzmap,yzmap,img_new1,maxid);
+    
+    
+    
+    for(int i=0; i<width; i++)
     {
-        Mat average_xmap;
-        for (int k=0; k<sz; k++)
-        {
-            if (id.at<uchar>(k)!=maxid+1 && img_new.at<uchar>(k)==m)
-            {
-                average_xmap.push_back(xmap[k]);
-//                cout<<float(xmap[k][1])<<endl;
-//                cout<<average_xmap<<endl;
-            }
-        }
+        delete []xmap[i];
+        delete []ymap[i];
+        delete []zmap[i];
+        delete []xzmap[i];
+        delete []yzmap[i];
     }
     
-    
-    
-	cv::imwrite("result.jpg", result);
-//    string add="-slic.tif";
-//    save_img(result,argv[1],add);
+    delete []xmap;
+    delete []ymap;
+    delete []zmap;
+    delete []xzmap;
+    delete []yzmap;
+    //    cout<<img_new.size()<<endl;
+    //	cv::imwrite("result.jpg", result);
+    //    string add="-slic.tif";
+    //    save_img(result,argv[1],add);
 }
