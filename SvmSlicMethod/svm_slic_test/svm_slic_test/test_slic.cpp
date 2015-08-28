@@ -1,4 +1,3 @@
-
 #include "slic.h"
 #include <cstdlib>
 #include <cstdio>
@@ -12,8 +11,16 @@ using namespace std;
 using namespace cv;
 using namespace cv::ml;
 
-extern Mat* save_img(Mat,char *,string);
-
+//*****存储图像********//
+void save_img (Mat img, char *string_img, string add)
+{
+    string savingfile(string_img);
+    cout<<string_img<<endl;
+    string shortstring=savingfile.substr(savingfile.find_last_of("/")+1,savingfile.length()-savingfile.find_last_of("/"));//只提取图片名字，不带路径
+    shortstring.erase(shortstring.find_last_of("."));//去除文件扩展名
+    shortstring+=add;//加入新的标示及扩展名
+    imwrite(shortstring,img);
+}
 //********计算x、y、z方向的方向角************//
 void compute_direction_angles(double p1,double p2,double p3,double p4,double * w_1,double * w_2,double * w_3,double * dis)
 {
@@ -132,26 +139,26 @@ void gsdam(IplImage* image1, Mat image2, double **xmap,double **ymap,double **zm
         {
             c1yx=c1[x][y];
             if (c1yx>xmax)
-                xmax=c1yx;//max(theta_x)
+            xmax=c1yx;//max(theta_x)
             else {};
             if (c1yx<xmin)
-                xmin=c1yx;//min(theta_x)
+            xmin=c1yx;//min(theta_x)
             else {};
             
             c2yx=c2[x][y];
             if (c2yx>ymax)
-                ymax=c2yx;
+            ymax=c2yx;
             else {};
             if (c2yx<ymin)
-                ymin=c2yx;
+            ymin=c2yx;
             else {};
             
             c3yx=c3[x][y];
             if (c3yx>zmax)
-                zmax=c3yx;
+            zmax=c3yx;
             else {};
             if (c3yx<zmin)
-                zmin=c3yx;
+            zmin=c3yx;
             else {};
         }
     }
@@ -219,74 +226,70 @@ void gsdam(IplImage* image1, Mat image2, double **xmap,double **ymap,double **zm
 void svm(Mat img_seg,double **xmap,double **ymap,double **zmap,double **xzmap,double **yzmap,Mat img_new1,double maxid)
 {
     /****记下所有区域内分割像素数占区域所有像素数大于等于一半的区域编号****/
-    int i,j,m,count=0;
-    Mat labelMat(0,1,CV_32FC1),countMat(0,1,CV_32FC1);
+    int i,j,m,regioncount=0;
+    Mat labelMat(0,1,CV_32FC1);
     Mat trainingData1(0,1,CV_32FC1);//正样本
     Mat trainingDataMat1;
     
-    //    Mat id2;//记录像素点是否已被访问过
-    //    img_new1.copyTo(id2);
+    Mat seg_count=Mat::zeros(Size(1,maxid+1),CV_32S);//size，前面为列，后面为行
+    Mat img_count=Mat::zeros(Size(1,maxid+1),CV_32S);
+    vector<Mat> pixelMat;//记录每个区域内的像素坐标
+    Mat temp(0,1,CV_32S);
     for ( m = 0; m < maxid+1; m++)
     {
-        int seg_count=0;
-        int img_count=0;
-        for( i = 0; i < img_new1.rows; i++)
+        pixelMat.push_back(temp);
+    }
+    //    cout<<pixelMat.size()<<endl;
+    for( i = 0; i < img_new1.rows; i++)
+    {
+        for ( j = 0; j< img_new1.cols; j++)
         {
-            for ( j = 0; j< img_new1.cols; j++)
+            for ( m = 0; m < maxid+1; m++)
             {
-                Scalar img_new1_pixel=img_new1.at<float>(i,j);
-                //                Scalar id2_pixel=id2.at<uchar>(i,j);id2_pixel.val[0]!=maxid+2 &&
-                //                cout<<img_new1_pixel.val[0]<<endl;
-                if (img_new1_pixel.val[0]==m)
+                if (img_new1.at<float>(i,j)==m)
                 {
-                    img_count=img_count+1;
-                    Scalar img_seg_pixel=img_seg.at<float>(i+1,j+1);
-                    //                    cout<<img_seg_pixel.val[0]<<endl;
-                    if (img_seg_pixel.val[0]==255)
+                    pixelMat[m].push_back(i);//横纵坐标交替写入
+                    pixelMat[m].push_back(j);
+                    img_count.at<int>(m,0)++;
+                    //                    cout<<img_count.at<int>(m,0)<<endl;
+                    if (img_seg.at<float>(i+1,j+1)==1)
                     {
-                        seg_count=seg_count+1;
+                        seg_count.at<int>(m,0)++;
                     }
-                    //                    id2.at<uchar>(i,j)=maxid+2;
+                    continue;
                 }
             }
-        }
-        //        cout<<img_count<<" "<<seg_count<<endl;
-        if (double(seg_count)/double(img_count)>=0.5)
-        {
-            //           cout<<double(seg_count)/double(img_count)<<endl;
-            labelMat.push_back(m);//记下所有区域内分割像素数占区域所有像素数大于一半的区域编号
-            count=count+1;
-            countMat.push_back(img_count);
         }
     }
-    cout<<labelMat<<endl;
-    cout<<count<<endl;
+    //    cout<<pixelMat[0]<<endl;
+    for (m=0; m<maxid+1; m++)
+    {
+        //        cout<<seg_count.at<int>(m,0)<<" "<<img_count.at<int>(m,0)<<endl;
+        if (double(seg_count.at<int>(m,0))/double(img_count.at<int>(m,0))>=0.1)
+        {
+            labelMat.push_back(m);//记下所有区域内分割像素数占区域所有像素数大于一半的区域编号
+            regioncount=regioncount+1;
+        }
+    }
+    
+    cout<<"满足条件的区域编号"<<labelMat<<endl;
+    cout<<"区域个数"<<regioncount<<endl;
+    
     /****求得每一个区域所有像素的maps值的平均值作为这个区域的maps值,同时也是预测数据******/
-    int x,y;
-    Mat id;//记录像素点是否已被访问过
-    img_new1.copyTo(id);
     Mat predictData1(0,1,CV_32FC1);//预测数据
     Mat predictDataMat1;
-    for (int m=0; m<maxid+1; m++)
+    for (m=0; m<maxid+1; m++)
     {
+        int num=img_count.at<int>(m,0);
         Mat average_xmap(0,1,CV_32FC1),average_ymap(0,1,CV_32FC1),average_zmap(0,1,CV_32FC1),average_xzmap(0,1,CV_32FC1),average_yzmap(0,1,CV_32FC1);
         Scalar xmap_mean_value,ymap_mean_value,zmap_mean_value,xzmap_mean_value,yzmap_mean_value;
-        for(y=0; y<img_new1.rows; y++)
+        for (i=0; i<num; i++)
         {
-            for(x=0; x<img_new1.cols; x++)
-            {
-                //                Scalar id_pixel=id.at<uchar>(y,x);id_pixel.val[0]!=maxid+2 &&
-                Scalar img_new1_pixel1=img_new1.at<float>(y,x);
-                if (img_new1_pixel1.val[0]==m)
-                {
-                    average_xmap.push_back(float(xmap[x+1][y+1]));
-                    average_ymap.push_back(float(ymap[x+1][y+1]));
-                    average_zmap.push_back(float(zmap[x+1][y+1]));
-                    average_xzmap.push_back(float(xzmap[x+1][y+1]));
-                    average_yzmap.push_back(float(yzmap[x+1][y+1]));
-                    //                    id.at<uchar>(y,x)=maxid+2;//遍历后将此点的id改为maxid+2,下次不再遍历到
-                }
-            }
+            average_xmap.push_back(float(xmap[pixelMat[m].at<int>(2*i+1)+1][pixelMat[m].at<int>(2*i)+1]));
+            average_ymap.push_back(float(ymap[pixelMat[m].at<int>(2*i+1)+1][pixelMat[m].at<int>(2*i)+1]));
+            average_zmap.push_back(float(zmap[pixelMat[m].at<int>(2*i+1)+1][pixelMat[m].at<int>(2*i)+1]));
+            average_xzmap.push_back(float(xzmap[pixelMat[m].at<int>(2*i+1)+1][pixelMat[m].at<int>(2*i)+1]));
+            average_yzmap.push_back(float(yzmap[pixelMat[m].at<int>(2*i+1)+1][pixelMat[m].at<int>(2*i)+1]));
         }
         xmap_mean_value=mean(average_xmap);
         ymap_mean_value=mean(average_ymap);
@@ -301,12 +304,11 @@ void svm(Mat img_seg,double **xmap,double **ymap,double **zmap,double **xzmap,do
         predictData1.push_back(float(yzmap_mean_value.val[0]));
     }
     predictDataMat1=predictData1.reshape(0,maxid+1);//变为maxid+1行5列的矩阵
-    cout<<predictDataMat1.size()<<endl;
-    //    Scalar temp=id.at<uchar>(400,200);
-    //    cout<<temp.val[0]<<endl;
+    cout<<"预测数据"<<predictDataMat1.size()<<endl;
+    
     /*****根据labelMat里记载的序号从预测数据中挑出训练数据*******/
     
-    for ( m = 0; m < count; m++)
+    for ( m = 0; m < regioncount; m++)
     {
         Scalar label_temp=labelMat.at<float>(m);
         //        cout<<label_temp.val[0]<<endl;
@@ -316,12 +318,12 @@ void svm(Mat img_seg,double **xmap,double **ymap,double **zmap,double **xzmap,do
         trainingData1.push_back(predictDataMat1.at<float>(label_temp.val[0],3));
         trainingData1.push_back(predictDataMat1.at<float>(label_temp.val[0],4));
     }
-    trainingDataMat1=trainingData1.reshape(0,count);
-    cout<<trainingDataMat1.size()<<endl;
+    trainingDataMat1=trainingData1.reshape(0,regioncount);
+    cout<<"正样本"<<trainingDataMat1.size()<<endl;
     
-    Scalar kk=sum(count);
+    Scalar kk=sum(regioncount);
     int k=kk.val[0];
-    cout<<k<<endl;
+    //    cout<<k<<endl;
     int N=sqrt(k*0.8/4);
     int M=N*N*4;
     Mat trainingData2(0,1,CV_32FC1);//负样本，取图像4个角像素
@@ -344,14 +346,14 @@ void svm(Mat img_seg,double **xmap,double **ymap,double **zmap,double **xzmap,do
         }
     }
     trainingDataMat2=trainingData2.reshape(0,M);
-    cout<<trainingDataMat2.size()<<endl;
+    cout<<"负样本"<<trainingDataMat2.size()<<endl;
     //    cout<<trainingDataMat2<<endl;
     
     for (i=0;i<M;i++)//正负样本合并
     {
         trainingDataMat1.push_back(trainingDataMat2.row(i));
     }
-    cout<<trainingDataMat1.size()<<endl;
+    cout<<"正负样本大小"<<trainingDataMat1.size()<<endl;
     
     int labels[k+M];//设置标记数组
     int val1=1,val2=-1;
@@ -378,33 +380,27 @@ void svm(Mat img_seg,double **xmap,double **ymap,double **zmap,double **xzmap,do
     
     Mat response;
     svm->predict(predictDataMat1,response);
-    cout<<response<<endl;
-    Mat id3;
-    img_new1.copyTo(id3);
+    //    cout<<response<<endl;
+    
     uchar white(255), black(0);//预测，每个区域统一标记
-    for (m=0; m<maxid; m++)
+    for (m=0; m<maxid+1; m++)
     {
-        for (y=0;y<img_new1.rows;y++)
+        int num1=img_count.at<int>(m,0);
+        if (response.at<float>(m)==1)
         {
-            for (x=0;x<img_new1.cols;x++)
+            for (i=0; i<num1; i++)
             {
-                Scalar img_new1_pixel2=img_new1.at<float>(y,x);
-                if(img_new1_pixel2.val[0]==m)
-                {
-                    //                    Scalar id3_pixel=id3.at<uchar>(y,x);id3_pixel.val[0]!=maxid+2 &&
-                    if (response.at<float>(m)==1){
-                        img_new1.at<float>(y,x)= white;
-                    }
-                    else if (response.at<float>(m)==-1){
-                        img_new1.at<float>(y,x)= black;
-                    }
-                    //                    id3.at<uchar>(y,x)=maxid+2;
-                }
+                img_new1.at<float>(pixelMat[m].at<int>(2*i),pixelMat[m].at<int>(2*i+1))= white;
+            }
+        }
+        else if (response.at<float>(m)==-1)
+        {
+            for (i=0; i<num1; i++)
+            {
+                img_new1.at<float>(pixelMat[m].at<int>(2*i),pixelMat[m].at<int>(2*i+1))= black;
             }
         }
     }
-    imshow("1",img_new1);
-    imwrite("/Users/qiuxinxin/temp/角毛藻显微图像/Test/SvmSlicMethod/svm_slic_test/3.png",img_new1);
 }
 
 
@@ -412,17 +408,13 @@ int main(int argc, char** argv)
 {
     //********slic得到每个区域的标记*********//
     cv::Mat img, result;
-    img = imread("/Users/qiuxinxin/temp/角毛藻显微图像/角毛藻图片/new/丹麦角毛藻/丹麦角毛藻_壳面观_青岛沿海_20041210_00_040_00.bmp");
-    //	img = imread(argv[1]);
-    //	int numSuperpixel = atoi(argv[2]);
-    int numSuperpixel = atoi("6000");//设置superpixel的个数
+    //    img = imread("/Users/qiuxinxin/temp/角毛藻显微图像/角毛藻图片/new/洛氏角毛藻/20081112-洛氏角毛藻-南海-BX61-40x-0000-24-0000-0000-0000-SCNUZYY-a01.tif");
+    //    int numSuperpixel = atoi("6000");//设置superpixel的个数
+    img = imread(argv[1]);
+    int numSuperpixel = atoi(argv[3]);
+    
     SLIC slic;
     slic.GenerateSuperpixels(img, numSuperpixel);
-    //    if (img.channels() == 3)
-    //        result = slic.GetImgWithContours(cv::Scalar(0, 0, 255));
-    //    else
-    //        result = slic.GetImgWithContours(cv::Scalar(128));
-    //    imwrite("/Users/qiuxinxin/temp/角毛藻显微图像/Test/SvmSlicMethod/svm_slic_test/31.png",result);
     int* label;
     int sz=img.rows*img.cols;
     label=slic.GetLabel();//得到每个区域的像素标记情况
@@ -434,35 +426,17 @@ int main(int argc, char** argv)
     {
         img_new.at<float>(k1)=label[k1];
         if (label[k1]>maxid)
-            maxid=label[k1];
+        maxid=label[k1];
         //        cout<<label[k1]<<endl;
         //        cout<<img_new.at<float>(k1)<<endl;
     }
-    
-    //    cout<<img_new<<endl;
-    //    double minid,maxid;
-    //    minMaxIdx(img_new, &minid, &maxid);//得出标记最大的号
     cout<<"maxid:"<<maxid<<endl;
     Mat img_new1=img_new.reshape(0,img.rows);//变成与原始图像一般大小
-    cout<<img_new1.rows<<" "<<img_new1.cols<<endl;
-    //    Scalar img_new_temp;
-    //    img_new_temp=img_new1.at<uchar>(20000);
-    //    cout<<img_new_temp.val[0]<<endl;
-    //    imwrite("/Users/qiuxinxin/temp/角毛藻显微图像/Test/SvmSlicMethod/svm_slic_test/13.png",img_new1);
-    //    cout<<img_new1<<endl;
-    //    for (int y=0;y<img_new1.rows;y++)
-    //    {
-    //        for (int x=0;x<img_new1.cols;x++)
-    //        {
-    //            Scalar tt=img_new1.at<float>(y,x);
-    //            cout<<tt.val[0]<<endl;
-    //
-    //        }
-    //    }
-    //    minMaxIdx(img_new1, &minid, &maxid);//得出标记最大的号
-    //    cout<<"maxid:"<<maxid<<endl;
+    cout<<"img_new1行列"<<img_new1.rows<<" "<<img_new1.cols<<endl;
+    
     //*************gsdam得出5个maps*************//
-    IplImage* image1=cvLoadImage("/Users/qiuxinxin/temp/角毛藻显微图像/角毛藻图片/new/丹麦角毛藻/丹麦角毛藻_壳面观_青岛沿海_20041210_00_040_00.bmp",0);
+    //    IplImage* image1=cvLoadImage("/Users/qiuxinxin/temp/角毛藻显微图像/角毛藻图片/new/洛氏角毛藻/20081112-洛氏角毛藻-南海-BX61-40x-0000-24-0000-0000-0000-SCNUZYY-a01.tif",0);
+    IplImage* image1=cvLoadImage(argv[1],0);
     IplImage* image_border = cvCreateImage( cvSize( image1 -> width+2, image1 -> height+2 ), IPL_DEPTH_8U, image1->nChannels);
     int height=image_border->height, width=image_border->width;
     double **xmap,**ymap,**zmap,**xzmap,**yzmap;
@@ -482,37 +456,15 @@ int main(int argc, char** argv)
     
     gsdam(image1,img,xmap,ymap,zmap,xzmap,yzmap);
     
-    //    for(int y=0; y<height-1; y++)
-    //    {
-    //        for(int x=0; x<width-1; x++)
-    //        {
-    //            cout<<xmap[x][y]<<endl;
-    //        }
-    //    }
-    
     //**********svm训练与预测************//
-    Mat img_seg=imread("/Users/qiuxinxin/temp/角毛藻显微图像/Test/SvmSlicMethod/preprocess/xz_yz-maps-filter4/丹麦角毛藻/丹麦角毛藻_壳面观_青岛沿海_20041210_00_040_00_xz_yz-filter.png",0);//resize后的分割图像
+    //    Mat img_seg=imread("/Users/qiuxinxin/temp/角毛藻显微图像/Test/SvmSlicMethod/preprocess/xz_yz-maps-filter4/洛氏角毛藻/20081112-洛氏角毛藻-南海-BX61-40x-0000-24-0000-0000-0000-SCNUZYY-a01_xz_yz-filter.png",0);//resize后的分割图像
+    Mat img_seg=imread(argv[2],0);//resize后的分割图像
     img_seg.convertTo(img_seg, CV_32FC1, 1.0/255.0);//从cv_8uc1转到cv_32fc1
-    //    int nn=0;
-    //    for (int y=0;y<img_seg.rows;y++)
-    //    {
-    //        for (int x=0;x<img_seg.cols;x++)
-    //        {
-    ////            cout<<img_seg.at<float>(y,x)<<endl;
-    //            Scalar tt=img_seg.at<uchar>(y,x);
-    //            if (tt.val[0]==255)
-    //                nn=nn+1;
-    //        }
-    //    }
-    //    cout<<nn<<endl;
-    //    cout<<img_seg.rows<<" "<<img_seg.cols<<endl;
-    //    Scalar kk=img_seg.at<uchar>(2559,2588);
-    //    cout<<kk.val[0]<<endl;
-    //    cout<<img_seg.at<float>(2559,2588)<<endl;
-    //    imshow("3",img_seg);
     svm(img_seg,xmap,ymap,zmap,xzmap,yzmap,img_new1,maxid);
     
-    
+    //********保存结果*******//
+    string add="-seg.png";
+    save_img(img_new1,argv[1],add);
     
     for(int i=0; i<width; i++)
     {
@@ -528,8 +480,5 @@ int main(int argc, char** argv)
     delete []zmap;
     delete []xzmap;
     delete []yzmap;
-    //    cout<<img_new.size()<<endl;
-    //	cv::imwrite("result.jpg", result);
-    //    string add="-slic.tif";
-    //    save_img(result,argv[1],add);
+    return 0;
 }
